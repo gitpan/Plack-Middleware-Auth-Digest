@@ -22,10 +22,9 @@ no_index:
 requires:
   Digest::HMAC_SHA1: 0
   Digest::MD5: 0
-  HTTP::Headers: 0
   Plack: 0
   perl: 5.8.1
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/miyagawa/Plack-Middleware-Auth-Digest.git
-version: 0.01
+version: 0.02
