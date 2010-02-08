@@ -9,7 +9,7 @@ use MIME::Base64 ();
 use Digest::MD5 ();
 use Digest::HMAC_SHA1 ();
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub hash {
     Digest::MD5::md5_hex(join ":", @_);
@@ -94,7 +94,7 @@ sub unauthorized {
     my $algorithm = 'MD5';
     my $qop       = 'auth';
 
-    my $challenge  = qq|Digest realm="$realm", nonce="$nonce", algorithm=$algorithm, qop=$qop|;
+    my $challenge  = qq|Digest realm="$realm", nonce="$nonce", algorithm=$algorithm, qop="$qop"|;
        $challenge .= qq(, stale=true) if $params{stale};
 
     return [
