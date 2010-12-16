@@ -9,7 +9,7 @@ use MIME::Base64 ();
 use Digest::MD5 ();
 use Digest::HMAC_SHA1 ();
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub hash {
     Digest::MD5::md5_hex(join ":", @_);
@@ -40,7 +40,7 @@ sub call {
             return [ 400, ['Content-Type', 'text/plain'], [ "Bad Request" ] ];
         }
 
-        my $password = $self->authenticator->($auth->{username});
+        my $password = $self->authenticator->($auth->{username}, $env);
         if (   defined $password
             && $self->valid_nonce($auth)
             && $self->digest($password, $auth) eq $auth->{response}) {
@@ -148,7 +148,7 @@ Plack::Middleware::Auth::Digest - Digest authentication
 
   enable "Auth::Digest", realm => "Secured", secret => "blahblahblah",
       authenticator => sub {
-          my $username = shift;
+          my ($username, $env) = @_;
           return $password; # for $username
       };
 
@@ -160,9 +160,9 @@ Plack::Middleware::Auth::Digest - Digest authentication
 =head1 DESCRIPTION
 
 Plack::Middleware::Auth::Digest is a Plack middleware component that
-enables Digest authentication. Your C<authenticator> callback is given
-an username as a string and should return a password, either as a raw
-password or a hashed password.
+enables Digest authentication. Your C<authenticator> callback is called using
+two parameters: a username as a string and the PSGI C<$env> hash. Your callback
+should return a password, either as a raw password or a hashed password.
 
 =head1 CONFIGURATIONS
 
@@ -170,8 +170,8 @@ password or a hashed password.
 
 =item authenticator
 
-A callback that takes an username and returns a password for the user,
-either in a plaintext password or a MD5 hash of
+A callback that takes a username and PSGI C<$env> hash and returns a password
+for the user, either in a plaintext password or a MD5 hash of
 "username:realm:password" (quotes not included) when
 C<password_hashed> option is enabled.
 
@@ -193,6 +193,25 @@ Server secret text string that is used to sign nonce. Required.
 Time-to-live seconds to prevent replay attacks. Defaults to 60.
 
 =back
+
+=head1 LIMITATIONS
+
+This middleware expects that the application has a full access to the
+headers sent by clients in PSGI environment. That is normally the case
+with standalone Perl PSGI web servers such as L<Starman> or
+L<HTTP::Server::Simple::PSGI>.
+
+However, in a web server configuration where you can't achieve this
+(i.e. using your application via mod_perl, CGI or FastCGI), this
+middleware does not work since your application can't know the value
+of C<Authorization:> header.
+
+If you use Apache as a web server and CGI or mod_perl to run your PSGI
+application, you can use mod_rewrite to pass the Authorization header
+to the application with the rewrite rule like following.
+
+  RewriteEngine on
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
 
 =head1 AUTHOR
 
